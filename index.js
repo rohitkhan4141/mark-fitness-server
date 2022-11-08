@@ -21,6 +21,28 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// jwt verify function
+
+function verifyJwt(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorizes access" });
+  }
+  const token = authHeader.split(" ")[1];
+  const secretToken = process.env.JWT_SECRET;
+
+  jwt.verify(token, secretToken, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({
+        status: "error",
+        message: "forbidden",
+      });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     const servicesCollection = client
@@ -74,6 +96,21 @@ async function run() {
       const cursor = reviewsCollection.find(query).sort(sort);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    app.get("/custom-reviews", async (req, res) => {
+      let query = {};
+      if (!req.query.email) {
+        return res.send({ message: "wrong query" });
+      }
+      if (req.query.email) {
+        query = {
+          email: req.query.email,
+        };
+      }
+      const cursor = reviewsCollection.find(query);
+      const customReviews = await cursor.toArray();
+      res.send(customReviews);
     });
   } finally {
   }
