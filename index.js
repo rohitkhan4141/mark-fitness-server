@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-// const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,6 +27,23 @@ async function run() {
       .db("Online-trainer")
       .collection("services");
     const reviewsCollection = client.db("Online-trainer").collection("reviews");
+
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const secret = process.env.JWT_SECRET;
+      jwt.sign(user, secret, (err, token) => {
+        if (err) {
+          return res.send({
+            status: "error",
+            message: "something went wrong",
+          });
+        }
+        res.send({
+          status: "success",
+          token,
+        });
+      });
+    });
 
     app.get("/services", async (req, res) => {
       const query = {};
