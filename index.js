@@ -31,6 +31,8 @@ function verifyJwt(req, res, next) {
   const token = authHeader.split(" ")[1];
   const secretToken = process.env.JWT_SECRET;
 
+  console.log(token);
+
   jwt.verify(token, secretToken, function (err, decoded) {
     if (err) {
       return res.status(403).send({
@@ -100,7 +102,12 @@ async function run() {
       res.send(services);
     });
 
-    app.get("/custom-reviews", async (req, res) => {
+    app.get("/custom-reviews", verifyJwt, async (req, res) => {
+      const decoded = req.decoded;
+      if (decoded.email !== req.query.email) {
+        return res.status(403).send({ message: "Unauthorized access" });
+      }
+
       let query = {};
       if (!req.query.email) {
         return res.send({ message: "wrong query" });
@@ -114,6 +121,7 @@ async function run() {
       const customReviews = await cursor.toArray();
       res.send(customReviews);
     });
+
     app.put("/update/:id", async (req, res) => {
       const id = req.params.id;
       const review = req.body;
