@@ -26,6 +26,7 @@ async function run() {
     const servicesCollection = client
       .db("Online-trainer")
       .collection("services");
+    const reviewsCollection = client.db("Online-trainer").collection("reviews");
 
     app.get("/services", async (req, res) => {
       const query = {};
@@ -44,6 +45,19 @@ async function run() {
       const result = await servicesCollection.insertOne(service);
       res.send(result);
     });
+    app.post("/add-review", async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
+    app.get("/reviews", async (req, res) => {
+      const query = {};
+      const sort = { date: -1 };
+      const cursor = reviewsCollection.find(query).sort(sort);
+      const services = await cursor.toArray();
+      res.send(services);
+    });
   } finally {
   }
 }
@@ -60,3 +74,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`app is running on port ${port}`);
 });
+
+// Date.parse(new Date())
