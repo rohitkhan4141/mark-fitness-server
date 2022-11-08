@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
@@ -66,7 +66,7 @@ async function run() {
         });
       });
     });
-
+    // services route
     app.get("/services", async (req, res) => {
       const query = {};
       const cursor = servicesCollection.find(query);
@@ -84,6 +84,8 @@ async function run() {
       const result = await servicesCollection.insertOne(service);
       res.send(result);
     });
+
+    // review route
     app.post("/add-review", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
@@ -111,6 +113,23 @@ async function run() {
       const cursor = reviewsCollection.find(query);
       const customReviews = await cursor.toArray();
       res.send(customReviews);
+    });
+    app.put("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const review = req.body;
+      const options = { upsert: true };
+      const updateReview = {
+        $set: {
+          review: review.review,
+        },
+      };
+      const filter = { _id: ObjectId(id) };
+      const result = await reviewsCollection.updateOne(
+        filter,
+        updateReview,
+        options
+      );
+      res.send(result);
     });
   } finally {
   }
