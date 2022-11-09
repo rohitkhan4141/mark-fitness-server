@@ -14,7 +14,6 @@ app.use(express.json());
 //database connection
 
 const uri = `mongodb+srv://${process.env.DB_ADMIN}:${process.env.DB_PASSWORD}@cluster0.oe1j3.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -30,8 +29,6 @@ function verifyJwt(req, res, next) {
   }
   const token = authHeader.split(" ")[1];
   const secretToken = process.env.JWT_SECRET;
-
-  console.log(token);
 
   jwt.verify(token, secretToken, function (err, decoded) {
     if (err) {
@@ -54,6 +51,7 @@ async function run() {
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
+      console.log(user);
       const secret = process.env.JWT_SECRET;
       jwt.sign(user, secret, (err, token) => {
         if (err) {
@@ -81,6 +79,14 @@ async function run() {
       const services = await cursor.toArray();
       res.send(services);
     });
+
+    app.get("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const service = await servicesCollection.findOne(query);
+      res.send(service);
+    });
+
     app.post("/add-services", async (req, res) => {
       const service = req.body;
       const result = await servicesCollection.insertOne(service);
@@ -94,8 +100,9 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/reviews", async (req, res) => {
-      const query = {};
+    app.get("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { service_id: id };
       const sort = { date: -1 };
       const cursor = reviewsCollection.find(query).sort(sort);
       const services = await cursor.toArray();
@@ -126,6 +133,7 @@ async function run() {
       const id = req.params.id;
       const review = req.body;
       const options = { upsert: true };
+      console.log(id, review);
       const updateReview = {
         $set: {
           review: review.review,
@@ -139,14 +147,16 @@ async function run() {
       );
       res.send(result);
     });
+    app.delete("/myreviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await reviewsCollection.deleteOne(query);
+      res.send(result);
+    });
   } finally {
   }
 }
 run().catch((err) => console.log(err));
-
-app.get("/myproducts", (req, res) => {
-  res.send("hello from product");
-});
 
 app.get("/", (req, res) => {
   res.send("hello from the server");
@@ -155,5 +165,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`app is running on port ${port}`);
 });
-
-// Date.parse(new Date())
